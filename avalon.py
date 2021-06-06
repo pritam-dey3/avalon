@@ -1,85 +1,86 @@
 from __future__ import annotations
-from random import sample
 from typing import List, Union
+
+from functools import partial
+from random import sample
 
 from characters_and_quests import get_characters, quest_table
 
 
-def get_id_name(players: List[Player]):
-    player_list = [(player.id, player.name) for player in players]
-    return player_list
+class Message:
+    def send_msg(self, id:int=-1, name:str='',
+                text:str="", guide:str="", 
+                options:list=[], m=1):
+        if id == -1:
+            print("Announcement...")
+        else:
+            print(f"Private message to {name}...")
+
+        if not options:
+            print(text)
+            return 0
+        
+        options = [str(opt) for opt in options]
+        if not guide:
+            guide = "You only have the options\n" + ", ".join(options)
+        
+        while True:
+            print(text)
+            print(guide)
+            responses = input().split()
+            if len(responses) != m:
+                print(f"You have to enter {m} valid answers separated by spaces.")
+            elif not all(entry in options for entry in responses):
+                print("Incorrect entries.")
+            else:
+                if m == 1:
+                    return responses[0]
+                else:
+                    return responses
 
 
 class Player:
-    def __init__(self, id=0, name=""):
+    def __init__(self, msg:Message, id=0, name=""):
         self.id = id
         self.name = name
+        self.msg = msg
+        self.send_msg = partial(msg.send_msg, id=self.id, name=self.name)
         self.character = ""
         self.type = ""
         self.knows_characters_of = []
         self.character_reveal_sentence = " "
         self.voting_options = []
+    
+    @staticmethod
+    def get_id_name(players: List[Player]):
+        player_list = [(player.id, player.name) for player in players]
+        return player_list
 
     def reveal_characters(self, players: List[Player]):
         revealed_characters = ""
         for player in players:
             if player.character in self.knows_characters_of:
                 revealed_characters += player.name + ", "
-        self.message(self.character_reveal_sentence + revealed_characters[:-2])
+        self.send_msg(self.character_reveal_sentence + revealed_characters[:-2])
 
     def select_players_for_quest(self, n_members, players: List[Player]):
-        players = get_id_name(players)
+        players = Player.get_id_name(players)
         player_id_msg = ""
         options = []
         for id, name in players:
             player_id_msg += str(id) + ":\t" + name + "\n"
             options.append(id)
-        msg = "Select players for the quest..." + "\n" + player_id_msg
-
-        while True:
-            try:
-                selected_player_ids = self.message(
-                    msg, need_response=True, options=options
-                )
-                members = [int(id) for id in selected_player_ids.split()]
-
-                assert (
-                    len(members) == n_members
-                ), f"You have to select {n_members} players for this quest."
-
-                assert all(
-                    id < len(players) and id >= 0 for id in members
-                ), "Invalid ids."
-
-            except (ValueError, AssertionError) as e:
-                self.message(str(e))
-                continue
-            else:
-                break
+        msg = "Select players for the quest..."
+        members = self.send_msg(text = msg, guide=player_id_msg, options=options, m=n_members)
+        members = [int(id) for id in members]
         return members
 
-    def vote(self):
-        while True:
-            try:
-                vote = self.message(
-                    "Do you approve the selected players for the quest?",
-                    need_response=True,
-                )
-            except AssertionError:
-                self.message("Your vote is not valid")
-                continue
-            else:
-                break
-        return vote in ["Approve", "approve", "A", "a"]
-
-    def message(self, msg, need_response: Union[bool, int] = False, options=[]):
-        options = [str(option) for option in options]
-
-        print(f"Private message to {self.name}...")
-        print(msg)
-        if need_response:
-            response = input()
-            return response
+    def vote_to_accept_team(self):
+        text = "Do you approve the current team for this quest?"
+        options = ["a", "r"]
+        guide = "a:\taccept team\nr:\treject team"
+        vote = self.send_msg(text=text, options=options, guide=guide)
+        return vote == "a"
 
     def set_player(self, id, name):
         self.id = id
@@ -87,6 +88,9 @@ class Player:
 
     def set_character(self, character_dict: dict):
         self.__dict__.update(character_dict)
+
+    def __repr__(self):
+        return f"{self.id}: {self.name}, {self.character}"
 
 
 class Game:
@@ -160,3 +164,9 @@ class Game:
             return True
         else:
             return False
+
+
+if __name__ == "__main__":
+    msg = Message()
+    players = [Player(msg, id=i, name=str(i)) for i in range(5)]
+    game = Game(players)

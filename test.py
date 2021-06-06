@@ -2,24 +2,26 @@ from unittest import TestCase, main
 import unittest
 from unittest.mock import patch, call
 
-from avalon import Player, Game, get_id_name
+from avalon import Player, Game, Message
 from characters_and_quests import morgana, merlin
+
+msg= Message()
+player = Player(msg, id=0, name="Bob")
+player_list = [player] + [Player(msg, id=i, name=str(i)) for i in range(1, 5)]
+
+game = Game(player_list)
 
 
 class SinglePlayerTest(TestCase):
-
-    player = Player(name="Bob")
-    player_list = [player] + [Player(id=i, name=str(i)) for i in range(1, 5)]
-
     def get_calls(self):
-        players = get_id_name(self.player_list)
+        players = Player.get_id_name(player_list)
         player_id_msg = ""
         options = []
         for id, name in players:
             player_id_msg += str(id) + ":\t" + name + "\n"
             options.append(id)
-        msg = "Select players for the quest..." + "\n" + player_id_msg
-        calls = [call(f"Private message to {self.player.name}..."), call(msg)]
+        msg = "Select players for the quest..."
+        calls = [call(f"Private message to {player.name}..."), call(msg), call(player_id_msg)]
 
         return calls
 
@@ -31,12 +33,12 @@ class SinglePlayerTest(TestCase):
     def test_select_players_for_quest_no_value(self, mocked_print, mocked_input):
         calls = self.get_calls()
         with self.assertRaises(Exception):
-            self.player.select_players_for_quest(3, self.player_list)
+            player.select_players_for_quest(3, player_list)
 
-        calls += [call("You have to select 3 players for this quest.")]
+        calls += [call('You have to enter 3 valid answers separated by spaces.')]
         mocked_print.assert_has_calls(calls, any_order=True)
 
-    @patch("builtins.input", return_value="gh\n")
+    @patch("builtins.input", return_value="gh 3 2\n")
     @patch(
         "builtins.print",
         side_effect=[None] * (2 + 2) + [Exception("To Break the Loop!")],
@@ -44,9 +46,9 @@ class SinglePlayerTest(TestCase):
     def test_select_players_for_quest_garbage_value(self, mocked_print, mocked_input):
         calls = self.get_calls()
         with self.assertRaises(Exception):
-            self.player.select_players_for_quest(3, self.player_list)
+            player.select_players_for_quest(3, player_list)
 
-        calls += [call("invalid literal for int() with base 10: 'gh'")]
+        calls += [call('Incorrect entries.')]
         mocked_print.assert_has_calls(calls, any_order=True)
 
     @patch("builtins.input", return_value="2 5 0\n")
@@ -57,27 +59,27 @@ class SinglePlayerTest(TestCase):
     def test_select_players_for_quest_invalid_id(self, mocked_print, mocked_input):
         calls = self.get_calls()
         with self.assertRaises(Exception):
-            self.player.select_players_for_quest(3, self.player_list)
+            player.select_players_for_quest(3, player_list)
 
-        calls += [call("Invalid ids.")]
+        calls += [call("Incorrect entries.")]
         mocked_print.assert_has_calls(calls, any_order=True)
 
     @patch("builtins.input", return_value="2 3 0\n")
     def test_select_players_for_quest_valid(self, mocked_input):
-        result = self.player.select_players_for_quest(3, self.player_list)
+        result = player.select_players_for_quest(3, player_list)
         self.assertEqual(result, [2, 3, 0], "Wrong output for selected ids")
 
     def test_vote(self):
-        self.player.set_character(morgana)
+        player.set_character(morgana)
         self.assertEqual(
-            self.player.voting_options,
+            player.voting_options,
             ["Approve", "approve", "A", "a", "Reject", "reject", "R", "r"],
             "Wrong voting options for Morgana",
         )
 
 
 class GameTest(TestCase):
-    game = Game([Player(id=i, name=str(i)) for i in range(5)])
+    game = Game([Player(msg, id=i, name=str(i)) for i in range(5)])
 
     def test_player_distribution(self):
         player_distribution = {
@@ -119,8 +121,8 @@ class GameTest(TestCase):
                 f"For {n} players, good player count is not {player_distribution[n][0]}",
             )
 
-            self.game = Game([Player(id=i, name=str(i)) for i in range(n + 1)])
-        self.game = Game([Player(id=i, name=str(i)) for i in range(5)])
+            self.game = Game([Player(msg, id=i, name=str(i)) for i in range(n + 1)])
+        self.game = Game([Player(msg, id=i, name=str(i)) for i in range(5)])
 
 
 if __name__ == "__main__":
