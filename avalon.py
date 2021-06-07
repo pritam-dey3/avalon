@@ -1,16 +1,22 @@
 from __future__ import annotations
-from typing import List, Union
+from typing import List, Union, Dict, Any
 
 from functools import partial
-from random import sample
+from random import sample, shuffle
 
 from characters_and_quests import get_characters, quest_table
 
 
 class Message:
-    def send_msg(self, id:int=-1, name:str='',
-                text:str="", guide:str="", 
-                options:list=[], m=1):
+    def send_msg(
+        self,
+        id: int = -1,
+        name: str = "",
+        text: str = "",
+        guide: str = "",
+        options: list = [],
+        m=1,
+    ):
         if id == -1:
             print("Announcement...")
         else:
@@ -19,11 +25,11 @@ class Message:
         if not options:
             print(text)
             return 0
-        
+
         options = [str(opt) for opt in options]
         if not guide:
             guide = "You only have the options\n" + ", ".join(options)
-        
+
         while True:
             print(text)
             print(guide)
@@ -40,7 +46,7 @@ class Message:
 
 
 class Player:
-    def __init__(self, msg:Message, id=0, name=""):
+    def __init__(self, msg: Message, id=0, name=""):
         self.id = id
         self.name = name
         self.msg = msg
@@ -49,8 +55,7 @@ class Player:
         self.type = ""
         self.knows_characters_of = []
         self.character_reveal_sentence = " "
-        self.voting_options = []
-    
+
     @staticmethod
     def get_id_name(players: List[Player]):
         player_list = [(player.id, player.name) for player in players]
@@ -61,26 +66,45 @@ class Player:
         for player in players:
             if player.character in self.knows_characters_of:
                 revealed_characters += player.name + ", "
-        self.send_msg(self.character_reveal_sentence + revealed_characters[:-2])
+        self.send_msg(text=self.character_reveal_sentence + revealed_characters[:-2])
 
-    def select_players_for_quest(self, n_members, players: List[Player]):
-        players = Player.get_id_name(players)
+    def select_players_for_quest(self, n_members: int, players: List[Player]):
         player_id_msg = ""
-        options = []
-        for id, name in players:
-            player_id_msg += str(id) + ":\t" + name + "\n"
-            options.append(id)
-        msg = "Select players for the quest..."
-        members = self.send_msg(text = msg, guide=player_id_msg, options=options, m=n_members)
-        members = [int(id) for id in members]
+        for option, player in enumerate(players):
+            player_id_msg += str(option + 1) + ":\t" + player.name + "\n"
+        msg = f"Select players for the quest...({n_members})"
+        options = range(1, len(players) + 1)
+        choices = self.send_msg(
+            text=msg,
+            guide=player_id_msg,
+            options=options,
+            m=n_members,
+        )
+        members = [players[int(c) - 1] for c in choices]
         return members
 
-    def vote_to_accept_team(self):
+    def vote_for_team(self):
         text = "Do you approve the current team for this quest?"
         options = ["a", "r"]
         guide = "a:\taccept team\nr:\treject team"
         vote = self.send_msg(text=text, options=options, guide=guide)
         return vote == "a"
+
+    def vote_for_quest(self):
+        text = "Do you want this mission to be a success or failure?"
+        options = ["s"] + (["f"] if self.type == "evil" else [])
+        guide = "s:\tSuccess\nf:\tFail" + ("(x)" if self.type == "good" else "")
+        vote = self.send_msg(text=text, options=options, guide=guide)
+        return vote == "s"
+
+    def find_merlin(self, players: List[Player]):
+        text = "Find Merlin to win the game."
+        options = range(1, len(players) + 1)
+        player_id_msg = ""
+        for option, player in enumerate(players):
+            player_id_msg += str(option + 1) + ":\t" + player.name + "\n"
+        suspect = self.send_msg(text=text, guide=player_id_msg, options=options, m=1)
+        return players[int(suspect) - 1].character == "merlin"
 
     def set_player(self, id, name):
         self.id = id
@@ -88,20 +112,32 @@ class Player:
 
     def set_character(self, character_dict: dict):
         self.__dict__.update(character_dict)
+        self.send_msg(text=f"You are {self.character}!")
 
     def __repr__(self):
         return f"{self.id}: {self.name}, {self.character}"
 
+    def __eq__(self, other: Player) -> bool:
+        return self.id == other.id
+
 
 class Game:
-    def __init__(self, players):
+    def __init__(self, players, msg: Message):
         self.players: List[Player] = players
+        self.msg = msg
+        self.send_msg = partial(msg.send_msg, id=-1)
         self.leader = 0
         self.vote_track = 0
-        self.quest_results = ["" for i in range(5)]
+        self.quest_results = ["" for _ in range(5)]
         self.result = ""
         self.n_players = len(self.players)
         self.quest_no = 0
+
+    def start(self):
+        self.assign_characters()
+        self.reveal_characters()
+        self.loop()
+        self.end()
 
     def assign_characters(self):
         characters = get_characters(self.n_players)
@@ -111,44 +147,67 @@ class Game:
 
     def reveal_characters(self):
         for player in self.players:
-            player.reveal_characters()
-
-    def start(self):
-        self.assign_characters()
-        self.reveal_characters()
-        self.loop()
-        self.end()
+            player.reveal_characters(self.players)
 
     def loop(self):
         while True:
             quest_members = self.players[self.leader].select_players_for_quest(
-                quest_table[self.quest_no][self.n_players - 5], self.players
+                quest_table[self.quest_no][self.n_players - 5][0], self.players
             )
             self.quest(quest_members)
             self.leader = (self.leader + 1) % self.n_players
+            if self.game_is_finished():
+                break
 
     def end(self):
-        pass
+        if self.result == "evil":
+            self.send_msg(text="Minions of the Mordred wins!")
+            return
+        assassin = next(filter(lambda p: p.character == "assassin", self.players))
+        merlin_found = assassin.find_merlin(self.players)
+        if merlin_found:
+            self.send_msg(text="Minions of the Mordred wins!")
+            return
+        else:
+            self.send_msg(text="The loyal servants of Arthur wins")
+            return
 
-    def broadcast(self, msg):
-        print("Announcement...")
-        print(msg)
-
-    def quest(self, members):
-        quest_player_names = [self.players[id].name for id in members]
-        self.broadcast(
-            f"{self.players[self.leader].name} has chosen the following players.\n"
+    def quest(self, members: List[Player]):
+        quest_player_names = [player.name for player in members]
+        self.send_msg(
+            text=f"{self.players[self.leader].name} has chosen the following players.\n"
             + ", ".join(quest_player_names)
         )
-        result = self.vote()
-        if (result <= 0):
+
+        # Team selection vote
+        team_vote_result = self.vote_for_team()
+        if team_vote_result <= 0:
             self.vote_track += 1
             return
-        
 
-    def vote(self):
-        votes = [player.vote() for player in self.players]
-        return 2*sum(votes) - self.n_players
+        self.quest_no += 1
+        # Quest vote
+        fail_count = self.vote_for_quest(members) 
+
+        if fail_count >= quest_table[self.quest_no][self.n_players - 5][1]:
+            self.quest_results.append("failure")
+            self.send_msg(text="Quest faild.")
+            return
+        else:
+            self.quest_results.append("success")
+            self.send_msg(text="Successful quest!")
+            return
+
+    def vote_for_team(self):
+        votes = [player.vote_for_team() for player in self.players]
+        return 2 * sum(votes) - self.n_players
+
+    def vote_for_quest(self, members: List[Player]):
+        votes = [player.vote_for_quest() for player in members]
+        shuffle(votes)
+        votes_msg = ["Success" if vote else "Fail" for vote in votes]
+        self.send_msg(text = "Votes for this quest\n" + ", ".join(votes_msg))
+        return len(members) - sum(votes)
 
     def game_is_finished(self):
         success_count = self.quest_results.count("success")
@@ -168,5 +227,7 @@ class Game:
 
 if __name__ == "__main__":
     msg = Message()
-    players = [Player(msg, id=i, name=str(i)) for i in range(5)]
-    game = Game(players)
+    names = ["Alice", "Cairo", "LongHorn", "Duke", "Green"]
+    players = [Player(msg, id=i, name=name) for i, name in enumerate(names)]
+    game = Game(msg=msg, players=players)
+    # game.start()

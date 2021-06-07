@@ -4,56 +4,49 @@ merlin = {
     "character": "merlin",
     "type": "good",
     "knows_characters_of": ["assassin", "morgana"],
-    "character_reveal_sentence": "Assassin and Morgana are ",
-    "voting_options": ["Approve", "approve", "A", "a"],
+    "character_reveal_sentence": "Assassin and Morgana are "
 }
 
 percival = {
     "character": "percival",
     "type": "good",
     "knows_characters_of": ["merlin", "morgana"],
-    "character_reveal_sentence": "Merlin is one of ",
-    "voting_options": ["Approve", "approve", "A", "a"],
+    "character_reveal_sentence": "Merlin is one of "
 }
 
 loyal_servant = {
     "character": "loyal_servant",
     "type": "good",
     "knows_characters_of": [],
-    "character_reveal_sentence": "",
-    "voting_options": ["Approve", "approve", "A", "a"],
+    "character_reveal_sentence": ""
 }
 
 assassin = {
     "character": "assassin",
     "type": "evil",
     "knows_characters_of": ["morgana", "minion"],
-    "character_reveal_sentence": "Minions of Mordred are ",
-    "voting_options": ["Approve", "approve", "A", "a", "Reject", "reject", "R", "r"],
+    "character_reveal_sentence": "Minions of Mordred are "
 }
 
 morgana = {
     "character": "morgana",
     "type": "evil",
     "knows_characters_of": ["assassin", "minion"],
-    "character_reveal_sentence": "Minions of Mordred are ",
-    "voting_options": ["Approve", "approve", "A", "a", "Reject", "reject", "R", "r"],
+    "character_reveal_sentence": "Minions of Mordred are "
 }
 
 minion = {
     "character": "minion",
     "type": "evil",
     "knows_characters_of": ["assassin", "morgana", "minion"],
-    "character_reveal_sentence": "Minions of Mordred are ",
-    "voting_options": ["Approve", "approve", "A", "a", "Reject", "reject", "R", "r"],
+    "character_reveal_sentence": "Minions of Mordred are "
 }
 
 oberon = {
     "character": "oberon",
     "type": "evil",
     "knows_characters_of": [],
-    "character_reveal_sentence": " ",
-    "voting_options": ["Approve", "approve", "A", "a", "Reject", "reject", "R", "r"],
+    "character_reveal_sentence": " "
 }
 
 
