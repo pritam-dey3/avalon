@@ -4,7 +4,7 @@ from typing import List, Union, Dict, Any
 from functools import partial
 from random import sample, shuffle
 
-from characters_and_quests import get_characters, quest_table
+from avalon.characters_and_quests import get_characters, quest_table
 
 
 class Message:

@@ -2,8 +2,8 @@ from unittest import TestCase, main
 import unittest
 from unittest.mock import patch, call
 
-from avalon import Player, Game, Message
-from characters_and_quests import morgana, merlin
+from avalon.avalon import Player, Game, Message
+from avalon.characters_and_quests import morgana, merlin
 
 
 class SinglePlayerTest(TestCase):
@@ -19,7 +19,7 @@ class SinglePlayerTest(TestCase):
         for option, player in enumerate(self.player_list):
             player_id_msg += str(option + 1) + ":\t" + player.name + "\n"
             options.append(id)
-        msg = "Select players for the quest..."
+        msg = "Select players for the quest...(3)"
         calls = [call(f"Private message to {self.player.name}..."), call(msg), call(player_id_msg)]
 
         return calls
