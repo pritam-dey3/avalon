@@ -2,13 +2,13 @@ from unittest import TestCase, main
 import unittest
 from unittest.mock import patch, call
 
-from avalon.avalon import Player, Game, Message
-from avalon.characters_and_quests import morgana, merlin
+from game.avalon import Player, Game, Interface
+from game.characters_and_quests import morgana, merlin
 
 
 class SinglePlayerTest(TestCase):
     def setUp(self):
-        msg = Message()
+        msg = Interface()
         self.player = Player(msg, id=0, name="Bob")
         self.player_list = [self.player] + [Player(msg, id=i, name=str(i)) for i in range(1, 5)]
         self.game = Game(self.player_list, msg)
@@ -74,7 +74,7 @@ class SinglePlayerTest(TestCase):
 
 class GameTest(TestCase):
     def setUp(self):
-        self.msg = Message()
+        self.msg = Interface()
         self.player_list = [Player(self.msg, id=i, name=str(i)) for i in range(5)]
         self.game = Game(self.player_list, self.msg)
 

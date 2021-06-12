@@ -4,10 +4,10 @@ from typing import List, Union, Dict, Any
 from functools import partial
 from random import sample, shuffle
 
-from avalon.characters_and_quests import get_characters, quest_table
+from game.characters_and_quests import get_characters, quest_table
 
 
-class Message:
+class Interface:
     def send_msg(
         self,
         id: int = -1,
@@ -46,11 +46,11 @@ class Message:
 
 
 class Player:
-    def __init__(self, msg: Message, id=0, name=""):
+    def __init__(self, intf: Interface, id=0, name=""):
         self.id = id
         self.name = name
-        self.msg = msg
-        self.send_msg = partial(msg.send_msg, id=self.id, name=self.name)
+        self.interface = intf
+        self.send_msg = partial(intf.send_msg, id=self.id, name=self.name)
         self.character = ""
         self.type = ""
         self.knows_characters_of = []
@@ -122,7 +122,7 @@ class Player:
 
 
 class Game:
-    def __init__(self, players, msg: Message):
+    def __init__(self, players, msg: Interface):
         self.players: List[Player] = players
         self.msg = msg
         self.send_msg = partial(msg.send_msg, id=-1)
@@ -223,10 +223,10 @@ class Game:
             return True
         else:
             return False
-
+            
 
 if __name__ == "__main__":
-    msg = Message()
+    msg = Interface()
     names = ["Alice", "Cairo", "LongHorn", "Duke", "Green"]
     players = [Player(msg, id=i, name=name) for i, name in enumerate(names)]
     game = Game(msg=msg, players=players)
