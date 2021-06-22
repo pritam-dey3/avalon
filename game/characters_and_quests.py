@@ -1,55 +1,63 @@
+from typing import List
 from random import sample
+from dataclasses import dataclass
 
 # use dataclass
+@dataclass
+class Character:
+    name: str
+    type: str
+    knows_characters_of: List[str]
+    character_reveal_sentence: str
 
-merlin = {
-    "character": "merlin",
-    "type": "good",
-    "knows_characters_of": ["assassin", "morgana"],
-    "character_reveal_sentence": "Assassin and Morgana are "
-}
+merlin = Character(
+    name = "merlin",
+    type =  "good",
+    knows_characters_of =  ["assassin", "morgana"],
+    character_reveal_sentence = "Assassin and Morgana are "
+)
 
-percival = {
-    "character": "percival",
-    "type": "good",
-    "knows_characters_of": ["merlin", "morgana"],
-    "character_reveal_sentence": "Merlin is one of "
-}
+percival = Character(
+    name = "percival",
+    type =  "good",
+    knows_characters_of =  ["merlin", "morgana"],
+    character_reveal_sentence = "Merlin is one of "
+)
 
-loyal_servant = {
-    "character": "loyal_servant",
-    "type": "good",
-    "knows_characters_of": [],
-    "character_reveal_sentence": ""
-}
+loyal_servant = Character(
+    name = "loyal_servant",
+    type =  "good",
+    knows_characters_of =  [],
+    character_reveal_sentence = ""
+)
 
-assassin = {
-    "character": "assassin",
-    "type": "evil",
-    "knows_characters_of": ["morgana", "minion"],
-    "character_reveal_sentence": "Minions of Mordred are "
-}
+assassin = Character(
+    name = "assassin",
+    type =  "evil",
+    knows_characters_of =  ["morgana", "minion"],
+    character_reveal_sentence = "Minions of Mordred are "
+)
 
-morgana = {
-    "character": "morgana",
-    "type": "evil",
-    "knows_characters_of": ["assassin", "minion"],
-    "character_reveal_sentence": "Minions of Mordred are "
-}
+morgana = Character(
+    name = "morgana",
+    type =  "evil",
+    knows_characters_of =  ["assassin", "minion"],
+    character_reveal_sentence = "Minions of Mordred are "
+)
 
-minion = {
-    "character": "minion",
-    "type": "evil",
-    "knows_characters_of": ["assassin", "morgana", "minion"],
-    "character_reveal_sentence": "Minions of Mordred are "
-}
+minion = Character(
+    name = "minion",
+    type =  "evil",
+    knows_characters_of =  ["assassin", "morgana", "minion"],
+    character_reveal_sentence = "Minions of Mordred are "
+)
 
-oberon = {
-    "character": "oberon",
-    "type": "evil",
-    "knows_characters_of": [],
-    "character_reveal_sentence": " "
-}
+oberon = Character(
+    name = "oberon",
+    type =  "evil",
+    knows_characters_of =  [],
+    character_reveal_sentence = " "
+)
 
 
 def get_characters(n_players):

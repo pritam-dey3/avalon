@@ -5,63 +5,62 @@ from typing import List, Union, Dict, Any
 from functools import partial
 from random import sample, shuffle
 
-from game.characters_and_quests import get_characters, quest_table
+from game.characters_and_quests import get_characters, quest_table, Character
 
 
 class Inquisitor:
-	def __init__(self, question: str = None, players:List[Player] = None):
-		self.question = question
-		self.targets = players
-		self.answers = dict()
-		self.event = asyncio.Event()
-		
-	def ask(self):
-	    asyncio.gather(
-	        *[self.send_msg(player, self.question) 
-	            for player in self.targets]
-	      )
-	    self.event.clear()
-	
-	async def send_msg(self, player:Player, q:str):
-	    await player.send_msg(q)
-	    
-	def get_answer(self, player:Player, answer):
-	    self.answers[player] = answer
-	    print(f"got {answer} from player-{player.id}")
-	    if len(self.answers.keys()) == len(self.targets):
-	        self.event.set()
-	    
-	async def result(self):
-		self.ask()
-		await self.event.wait()
-		return self.answers
+    def __init__(self, question: str = None, players: List[Player] = None):
+        self.question = question
+        self.targets = players
+        self.answers = dict()
+        self.event = asyncio.Event()
 
+    def ask(self):
+        asyncio.gather(
+            *[self.send_msg(player, self.question) for player in self.targets]
+        )
+        self.event.clear()
 
-class Player:
-    def __init__(self, id=0, name=""):
+    async def send_msg(self, player: Player, q: str):
+        await player.send_msg(q)
+
+    def get_answer(self, player: Player, answer):
+        self.answers[player] = answer
+        print(f"got {answer} from player-{player.acc.id}")
+        if len(self.answers.keys()) == len(self.targets):
+            self.event.set()
+
+    async def result(self):
+        self.ask()
+        await self.event.wait()
+        return self.answers
+
+class Account:
+    def __init__(self, id, name):
         self.id = id
         self.name = name
-        self.character = ""
-        self.type = ""
-        self.knows_characters_of = []
-        self.character_reveal_sentence = " "
+
+class Player:
+    def __init__(self, acc:Account=None, character: Character = None):
+        self.acc = acc
+        self.character = character
 
     @staticmethod
     def get_id_name(players: List[Player]):
-        player_list = [(player.id, player.name) for player in players]
+        player_list = [(player.acc.id, player.acc.name) for player in players]
         return player_list
 
     def reveal_characters(self, players: List[Player]):
         revealed_characters = ""
         for player in players:
-            if player.character in self.knows_characters_of:
-                revealed_characters += player.name + ", "
-        self.send_msg(text=self.character_reveal_sentence + revealed_characters[:-2])
+            if player.character.name in self.character.knows_characters_of:
+                revealed_characters += player.acc.name + ", "
+        self.send_msg(text=self.character.character_reveal_sentence + revealed_characters[:-2])
 
     def select_players_for_quest(self, n_members: int, players: List[Player]):
         player_id_msg = ""
         for option, player in enumerate(players):
-            player_id_msg += str(option + 1) + ":\t" + player.name + "\n"
+            player_id_msg += str(option + 1) + ":\t" + player.acc.name + "\n"
         msg = f"Select players for the quest...({n_members})"
         options = range(1, len(players) + 1)
         choices = self.send_msg(
@@ -82,8 +81,8 @@ class Player:
 
     def vote_for_quest(self):
         text = "Do you want this mission to be a success or failure?"
-        options = ["s"] + (["f"] if self.type == "evil" else [])
-        guide = "s:\tSuccess\nf:\tFail" + ("(x)" if self.type == "good" else "")
+        options = ["s"] + (["f"] if self.character.type == "evil" else [])
+        guide = "s:\tSuccess\nf:\tFail" + ("(x)" if self.character.type == "good" else "")
         vote = self.send_msg(text=text, options=options, guide=guide)
         return vote == "s"
 
@@ -92,17 +91,16 @@ class Player:
         options = range(1, len(players) + 1)
         player_id_msg = ""
         for option, player in enumerate(players):
-            player_id_msg += str(option + 1) + ":\t" + player.name + "\n"
+            player_id_msg += str(option + 1) + ":\t" + player.acc.name + "\n"
         suspect = self.send_msg(text=text, guide=player_id_msg, options=options, m=1)
         return players[int(suspect) - 1].character == "merlin"
 
-    def set_player(self, id, name):
-        self.id = id
-        self.name = name
+    def set_player(self, acc:Account):
+        self.acc = acc
 
-    def set_character(self, character_dict: dict):
-        self.__dict__.update(character_dict)
-        self.send_msg(text=f"You are {self.character}!")
+    def set_character(self, character: Character):
+        self.character = character
+        self.send_msg(text=f"You are {self.character.name}!")
 
     def send_msg(
         self,
@@ -111,8 +109,8 @@ class Player:
         options: list = [],
         m=1,
     ):
-        
-        print(f"Private message to {self.name}...")
+
+        print(f"Private message to {self.acc.name}...")
 
         if not options:
             print(text)
@@ -137,14 +135,14 @@ class Player:
                     return responses
 
     def __repr__(self):
-        return f"{self.id}: {self.name}, {self.character}"
+        return f"{self.acc.id}: {self.acc.name}, {self.character}"
 
     def __eq__(self, other: Player) -> bool:
-        return self.id == other.id
+        return self.acc.id == other.acc.id
 
 
 class Game:
-    def __init__(self, players):
+    def __init__(self, players): #, inq:Inquisitor
         self.players: List[Player] = players
         self.leader = 0
         self.vote_track = 0
@@ -153,7 +151,7 @@ class Game:
         self.n_players = len(self.players)
         self.quest_no = 0
 
-    def start(self):
+    async def start(self):
         self.assign_characters()
         self.reveal_characters()
         self.loop()
@@ -193,9 +191,9 @@ class Game:
             return
 
     def quest(self, members: List[Player]):
-        quest_player_names = [player.name for player in members]
+        quest_player_names = [player.acc.name for player in members]
         self.send_msg(
-            text=f"{self.players[self.leader].name} has chosen the following players.\n"
+            text=f"{self.players[self.leader].acc.name} has chosen the following players.\n"
             + ", ".join(quest_player_names)
         )
 
@@ -207,11 +205,11 @@ class Game:
 
         self.quest_no += 1
         # Quest vote
-        fail_count = self.vote_for_quest(members) 
+        fail_count = self.vote_for_quest(members)
 
         if fail_count >= quest_table[self.quest_no][self.n_players - 5][1]:
             self.quest_results.append("failure")
-            self.send_msg(text="Quest faild.")
+            self.send_msg(text="Quest failed.")
             return
         else:
             self.quest_results.append("success")
@@ -226,7 +224,7 @@ class Game:
         votes = [player.vote_for_quest() for player in members]
         shuffle(votes)
         votes_msg = ["Success" if vote else "Fail" for vote in votes]
-        self.send_msg(text = "Votes for this quest\n" + ", ".join(votes_msg))
+        self.send_msg(text="Votes for this quest\n" + ", ".join(votes_msg))
         return len(members) - sum(votes)
 
     def game_is_finished(self):
@@ -244,11 +242,6 @@ class Game:
         else:
             return False
 
-    def send_msg(
-        self,
-        text: str = ""
-    ):
-        
+    def send_msg(self, text: str = ""):
         print(f"Announcement...")
         print(text)
-
