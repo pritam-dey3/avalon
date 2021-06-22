@@ -1,5 +1,7 @@
 from random import sample
 
+# use dataclass
+
 merlin = {
     "character": "merlin",
     "type": "good",

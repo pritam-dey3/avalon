@@ -2,16 +2,15 @@ from unittest import TestCase, main
 import unittest
 from unittest.mock import patch, call
 
-from game.avalon import Player, Game, Interface
+from game.avalon import Player, Game
 from game.characters_and_quests import morgana, merlin
 
 
 class SinglePlayerTest(TestCase):
     def setUp(self):
-        msg = Interface()
-        self.player = Player(msg, id=0, name="Bob")
-        self.player_list = [self.player] + [Player(msg, id=i, name=str(i)) for i in range(1, 5)]
-        self.game = Game(self.player_list, msg)
+        self.player = Player(id=0, name="Bob")
+        self.player_list = [self.player] + [Player(id=i, name=str(i)) for i in range(1, 5)]
+        self.game = Game(self.player_list)
 
     def get_calls(self):
         player_id_msg = ""
@@ -74,9 +73,8 @@ class SinglePlayerTest(TestCase):
 
 class GameTest(TestCase):
     def setUp(self):
-        self.msg = Interface()
-        self.player_list = [Player(self.msg, id=i, name=str(i)) for i in range(5)]
-        self.game = Game(self.player_list, self.msg)
+        self.player_list = [Player(id=i, name=str(i)) for i in range(5)]
+        self.game = Game(self.player_list)
 
     def test_player_distribution(self):
         player_distribution = {
@@ -118,8 +116,8 @@ class GameTest(TestCase):
                 f"For {n} players, good player count is not {player_distribution[n][0]}",
             )
 
-            self.game = Game([Player(self.msg, id=i, name=str(i)) for i in range(n + 1)], self.msg)
-        self.game = Game([Player(self.msg, id=i, name=str(i)) for i in range(5)], self.msg)
+            self.game = Game([Player(id=i, name=str(i)) for i in range(n + 1)])
+        self.game = Game([Player(id=i, name=str(i)) for i in range(5)])
 
 
 if __name__ == "__main__":

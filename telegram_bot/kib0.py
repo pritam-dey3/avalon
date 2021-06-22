@@ -4,7 +4,7 @@ from typing import List
 from datetime import datetime
 from collections.abc import Sequence
 
-import telegram
+from telegram import User, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import Update, ForceReply
 from telegram.ext import (
     Updater,
@@ -12,9 +12,10 @@ from telegram.ext import (
     MessageHandler,
     Filters,
     CallbackContext,
+    CallbackQueryHandler,
 )
 
-from telegram_bot.credentials import test_accounts
+from telegram_bot.credentials import test_accounts, TELEGRAM_BOT_TOKEN
 from game.avalon import Game, Player
 
 
@@ -23,17 +24,8 @@ os.makedirs(os.path.dirname(filename), exist_ok=True)
 logging.basicConfig(level=logging.INFO, filename=filename)
 logger = logging.getLogger(__name__)
 
-
-class _Singleton(type):
-    """ A metaclass that creates a Singleton base class when called. """
-
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
+updater = Updater(TELEGRAM_BOT_TOKEN)
+dp = updater.dispatcher
 
 class PlayerList:
     _instance = None
@@ -43,7 +35,7 @@ class PlayerList:
             print("Creating the player list")
             self._instance = super(PlayerList, self).__new__(self)
             # Put any initialization here.
-            self.player_list: List[telegram.User] = []
+            self.player_list: List[User] = []
         else:
             self.just_created = False
             return self._instance
@@ -69,10 +61,14 @@ def start(update: Update, context: CallbackContext) -> None:
         reply_markup=ForceReply(selective=True),
     )
 
+dp.add_handler(CommandHandler("start", start, run_async=True))
+
 
 def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
     update.message.reply_text("Help!")
+
+dp.add_handler(CommandHandler("help", help_command, run_async=True))
 
 
 def start_game(update: Update, _):
@@ -94,6 +90,38 @@ def start_game(update: Update, _):
 
         names = [player.username for player in players.player_list]
         update.message.reply_text("Game started with players " + ", ".join(names))
+        
+dp.add_handler(CommandHandler(["start_game", "join", "done"], start_game, run_async=True))
+
+
+def choose_option(user: User):
+    keyboard = [
+        [
+            InlineKeyboardButton("Option 1", callback_data='1'),
+            InlineKeyboardButton("Option 2", callback_data='2'),
+        ],
+        [InlineKeyboardButton("Option 3", callback_data='3')],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    user.send_message(text='Please choose:', reply_markup=reply_markup)
+
+
+def button(update: Update, _) -> None:
+    """Parses the CallbackQuery and updates the message text."""
+    query = update.callback_query
+    query.answer()
+    query.edit_message_text(text=f"Selected option: {query.data}")
+    print(query.data)
+
+dp.add_handler(CallbackQueryHandler(button))
+
+
+def choice(update: Update, _):
+    choose_option(update.message.from_user)
+
+dp.add_handler(CommandHandler('choice', choice))
+
 
 
 def start_test(update: Update, _):

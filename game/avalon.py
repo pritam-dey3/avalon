@@ -7,50 +7,48 @@ from random import sample, shuffle
 from game.characters_and_quests import get_characters, quest_table
 
 
-class Interface:
-    def send_msg(
-        self,
-        id: int = -1,
-        name: str = "",
-        text: str = "",
-        guide: str = "",
-        options: list = [],
-        m=1,
-    ):
-        if id == -1:
-            print("Announcement...")
-        else:
-            print(f"Private message to {name}...")
+# class Interface:
+#     def send_msg(
+#         self,
+#         id: int = -1,
+#         name: str = "",
+#         text: str = "",
+#         guide: str = "",
+#         options: list = [],
+#         m=1,
+#     ):
+#         if id == -1:
+#             print("Announcement...")
+#         else:
+#             print(f"Private message to {name}...")
 
-        if not options:
-            print(text)
-            return 0
+#         if not options:
+#             print(text)
+#             return 0
 
-        options = [str(opt) for opt in options]
-        if not guide:
-            guide = "You only have the options\n" + ", ".join(options)
+#         options = [str(opt) for opt in options]
+#         if not guide:
+#             guide = "You only have the options\n" + ", ".join(options)
 
-        while True:
-            print(text)
-            print(guide)
-            responses = input().split()
-            if len(responses) != m:
-                print(f"You have to enter {m} valid answers separated by spaces.")
-            elif not all(entry in options for entry in responses):
-                print("Incorrect entries.")
-            else:
-                if m == 1:
-                    return responses[0]
-                else:
-                    return responses
+#         while True:
+#             print(text)
+#             print(guide)
+#             responses = input().split()
+#             if len(responses) != m:
+#                 print(f"You have to enter {m} valid answers separated by spaces.")
+#             elif not all(entry in options for entry in responses):
+#                 print("Incorrect entries.")
+#             else:
+#                 if m == 1:
+#                     return responses[0]
+#                 else:
+#                     return responses
 
 
 class Player:
-    def __init__(self, intf: Interface, id=0, name=""):
+    def __init__(self, id=0, name=""):
         self.id = id
         self.name = name
-        self.interface = intf
-        self.send_msg = partial(intf.send_msg, id=self.id, name=self.name)
         self.character = ""
         self.type = ""
         self.knows_characters_of = []
@@ -114,6 +112,38 @@ class Player:
         self.__dict__.update(character_dict)
         self.send_msg(text=f"You are {self.character}!")
 
+    def send_msg(
+        self,
+        text: str = "",
+        guide: str = "",
+        options: list = [],
+        m=1,
+    ):
+        
+        print(f"Private message to {self.name}...")
+
+        if not options:
+            print(text)
+            return 0
+
+        options = [str(opt) for opt in options]
+        if not guide:
+            guide = "You only have the options\n" + ", ".join(options)
+
+        while True:
+            print(text)
+            print(guide)
+            responses = input().split()
+            if len(responses) != m:
+                print(f"You have to enter {m} valid answers separated by spaces.")
+            elif not all(entry in options for entry in responses):
+                print("Incorrect entries.")
+            else:
+                if m == 1:
+                    return responses[0]
+                else:
+                    return responses
+
     def __repr__(self):
         return f"{self.id}: {self.name}, {self.character}"
 
@@ -122,10 +152,8 @@ class Player:
 
 
 class Game:
-    def __init__(self, players, msg: Interface):
+    def __init__(self, players):
         self.players: List[Player] = players
-        self.msg = msg
-        self.send_msg = partial(msg.send_msg, id=-1)
         self.leader = 0
         self.vote_track = 0
         self.quest_results = ["" for _ in range(5)]
@@ -223,11 +251,12 @@ class Game:
             return True
         else:
             return False
-            
 
-if __name__ == "__main__":
-    msg = Interface()
-    names = ["Alice", "Cairo", "LongHorn", "Duke", "Green"]
-    players = [Player(msg, id=i, name=name) for i, name in enumerate(names)]
-    game = Game(msg=msg, players=players)
-    # game.start()
+    def send_msg(
+        self,
+        text: str = ""
+    ):
+        
+        print(f"Announcement...")
+        print(text)
+
