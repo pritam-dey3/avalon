@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 from typing import List, Union, Dict, Any
 
 from functools import partial
@@ -7,42 +8,33 @@ from random import sample, shuffle
 from game.characters_and_quests import get_characters, quest_table
 
 
-# class Interface:
-#     def send_msg(
-#         self,
-#         id: int = -1,
-#         name: str = "",
-#         text: str = "",
-#         guide: str = "",
-#         options: list = [],
-#         m=1,
-#     ):
-#         if id == -1:
-#             print("Announcement...")
-#         else:
-#             print(f"Private message to {name}...")
-
-#         if not options:
-#             print(text)
-#             return 0
-
-#         options = [str(opt) for opt in options]
-#         if not guide:
-#             guide = "You only have the options\n" + ", ".join(options)
-
-#         while True:
-#             print(text)
-#             print(guide)
-#             responses = input().split()
-#             if len(responses) != m:
-#                 print(f"You have to enter {m} valid answers separated by spaces.")
-#             elif not all(entry in options for entry in responses):
-#                 print("Incorrect entries.")
-#             else:
-#                 if m == 1:
-#                     return responses[0]
-#                 else:
-#                     return responses
+class Inquisitor:
+	def __init__(self, question: str = None, players:List[Player] = None):
+		self.question = question
+		self.targets = players
+		self.answers = dict()
+		self.event = asyncio.Event()
+		
+	def ask(self):
+	    asyncio.gather(
+	        *[self.send_msg(player, self.question) 
+	            for player in self.targets]
+	      )
+	    self.event.clear()
+	
+	async def send_msg(self, player:Player, q:str):
+	    await player.send_msg(q)
+	    
+	def get_answer(self, player:Player, answer):
+	    self.answers[player] = answer
+	    print(f"got {answer} from player-{player.id}")
+	    if len(self.answers.keys()) == len(self.targets):
+	        self.event.set()
+	    
+	async def result(self):
+		self.ask()
+		await self.event.wait()
+		return self.answers
 
 
 class Player:
