@@ -10,53 +10,51 @@ class Character:
     knows_characters_of: List[str]
     character_reveal_sentence: str
 
+
 merlin = Character(
-    name = "merlin",
-    type =  "good",
-    knows_characters_of =  ["assassin", "morgana"],
-    character_reveal_sentence = "Assassin and Morgana are "
+    name="merlin",
+    type="good",
+    knows_characters_of=["assassin", "morgana"],
+    character_reveal_sentence="Assassin and Morgana are ",
 )
 
 percival = Character(
-    name = "percival",
-    type =  "good",
-    knows_characters_of =  ["merlin", "morgana"],
-    character_reveal_sentence = "Merlin is one of "
+    name="percival",
+    type="good",
+    knows_characters_of=["merlin", "morgana"],
+    character_reveal_sentence="Merlin is one of ",
 )
 
 loyal_servant = Character(
-    name = "loyal_servant",
-    type =  "good",
-    knows_characters_of =  [],
-    character_reveal_sentence = ""
+    name="loyal_servant",
+    type="good",
+    knows_characters_of=[],
+    character_reveal_sentence="",
 )
 
 assassin = Character(
-    name = "assassin",
-    type =  "evil",
-    knows_characters_of =  ["morgana", "minion"],
-    character_reveal_sentence = "Minions of Mordred are "
+    name="assassin",
+    type="evil",
+    knows_characters_of=["morgana", "minion"],
+    character_reveal_sentence="Minions of Mordred are ",
 )
 
 morgana = Character(
-    name = "morgana",
-    type =  "evil",
-    knows_characters_of =  ["assassin", "minion"],
-    character_reveal_sentence = "Minions of Mordred are "
+    name="morgana",
+    type="evil",
+    knows_characters_of=["assassin", "minion"],
+    character_reveal_sentence="Minions of Mordred are ",
 )
 
 minion = Character(
-    name = "minion",
-    type =  "evil",
-    knows_characters_of =  ["assassin", "morgana", "minion"],
-    character_reveal_sentence = "Minions of Mordred are "
+    name="minion",
+    type="evil",
+    knows_characters_of=["assassin", "morgana", "minion"],
+    character_reveal_sentence="Minions of Mordred are ",
 )
 
 oberon = Character(
-    name = "oberon",
-    type =  "evil",
-    knows_characters_of =  [],
-    character_reveal_sentence = " "
+    name="oberon", type="evil", knows_characters_of=[], character_reveal_sentence=" "
 )
 
 
@@ -87,4 +85,3 @@ quest_table = [
     [(3, 1), (3, 1), (4, 2), (5, 2), (5, 2), (5, 2)],
     [(3, 1), (4, 1), (4, 1), (5, 1), (5, 1), (5, 1)],
 ]
-

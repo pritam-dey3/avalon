@@ -9,7 +9,9 @@ from game.characters_and_quests import morgana, merlin
 class SinglePlayerTest(TestCase):
     def setUp(self):
         self.player = Player(id=0, name="Bob")
-        self.player_list = [self.player] + [Player(id=i, name=str(i)) for i in range(1, 5)]
+        self.player_list = [self.player] + [
+            Player(id=i, name=str(i)) for i in range(1, 5)
+        ]
         self.game = Game(self.player_list)
 
     def get_calls(self):
@@ -19,7 +21,11 @@ class SinglePlayerTest(TestCase):
             player_id_msg += str(option + 1) + ":\t" + player.name + "\n"
             options.append(id)
         msg = "Select players for the quest...(3)"
-        calls = [call(f"Private message to {self.player.name}..."), call(msg), call(player_id_msg)]
+        calls = [
+            call(f"Private message to {self.player.name}..."),
+            call(msg),
+            call(player_id_msg),
+        ]
 
         return calls
 
@@ -33,7 +39,7 @@ class SinglePlayerTest(TestCase):
         with self.assertRaises(Exception):
             self.player.select_players_for_quest(3, self.player_list)
 
-        calls += [call('You have to enter 3 valid answers separated by spaces.')]
+        calls += [call("You have to enter 3 valid answers separated by spaces.")]
         mocked_print.assert_has_calls(calls, any_order=True)
 
     @patch("builtins.input", return_value="gh 3 2\n")
@@ -46,7 +52,7 @@ class SinglePlayerTest(TestCase):
         with self.assertRaises(Exception):
             self.player.select_players_for_quest(3, self.player_list)
 
-        calls += [call('Incorrect entries.')]
+        calls += [call("Incorrect entries.")]
         mocked_print.assert_has_calls(calls, any_order=True)
 
     @patch("builtins.input", return_value="2 5 0\n")
@@ -65,10 +71,8 @@ class SinglePlayerTest(TestCase):
     @patch("builtins.input", return_value="2 3 1\n")
     def test_select_players_for_quest_valid(self, mocked_input):
         result = self.player.select_players_for_quest(3, self.player_list)
-        expected = [self.player_list[i] for i in [1,2,0]]
+        expected = [self.player_list[i] for i in [1, 2, 0]]
         self.assertEqual(result, expected, "Wrong output for selected ids")
-
-    
 
 
 class GameTest(TestCase):
