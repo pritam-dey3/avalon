@@ -30,7 +30,6 @@ class ShellPlayer(Player):
         
         q = self.current_inq.questions[self]
         options = q.options
-        # print(options.keys(), args, sep="\n")
         if all(arg in options.keys() for arg in args) and len(args) == q.m:
             self.current_inq.get_answer(self, args)
         else:

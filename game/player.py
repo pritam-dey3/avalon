@@ -35,21 +35,6 @@ class Player:
             text=self.character.character_reveal_sentence + revealed_characters[:-2]
         )
 
-    # def select_players_for_quest(self, n_members: int, players: List[Player]):
-    #     player_id_msg = ""
-    #     for option, player in enumerate(players):
-    #         player_id_msg += str(option + 1) + ":\t" + player.name + "\n"
-    #     msg = f"Select players for the quest...({n_members})"
-    #     options = range(1, len(players) + 1)
-    #     choices = self.send_msg(
-    #         text=msg,
-    #         guide=player_id_msg,
-    #         options=list(options),
-    #         m=n_members,
-    #     )
-    #     members = [players[int(c) - 1] for c in choices]
-    #     return members
-
     def vote_for_team(self):
         text = "Do you approve the current team for this quest?"
         options = ["a", "r"]
@@ -66,17 +51,6 @@ class Player:
         vote = self.send_msg(text=text, options=options, guide=guide)
         return vote == "s"
 
-    # def find_merlin(self, players: List[Player]):
-    #     text = "Find Merlin to win the game."
-    #     options = range(1, len(players) + 1)
-    #     player_id_msg = ""
-    #     for option, player in enumerate(players):
-    #         player_id_msg += str(option + 1) + ":\t" + player.name + "\n"
-    #     suspect = self.send_msg(
-    #         text=text, guide=player_id_msg, options=list(options), m=1
-    #     )
-    #     return players[int(suspect) - 1].character == "merlin"
-
     def set_player(self, acc: Account):
         self.acc = acc
 
@@ -91,10 +65,7 @@ class Player:
         Args:
             text (str, optional): Text message to send. Defaults to "".
         """
-        raise NotImplementedError
-        # print(f"Private message to {self.acc.name}...")
-        # print(text)
-        
+        raise NotImplementedError        
 
     def get_msg(self, args: List[str]):
         """Called when the player answers to some question.
@@ -108,19 +79,6 @@ class Player:
             args (List[str]): List of arguments passed while answering
         """
         raise NotImplementedError
-        # if not isinstance(args, list):
-        #     args = [args]
-        # if self.current_inq is None:
-        #     self.send_msg("You don't have any questions")
-        #     return 0
-
-        # q = self.current_inq.questions[self]
-        # options = q.options
-        # # print(options.keys(), args, sep="\n")
-        # if all(arg in options.keys() for arg in args) and len(args) == q.m:
-        #     self.current_inq.get_answer(self, args)
-        # else:
-        #     self.send_msg(f"Invalid answer(s). Choose {q.m} answers from the options")
 
     def __repr__(self):
         return f"{self.acc.id}: {self.acc.name}, {self.character.name}"

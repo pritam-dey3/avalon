@@ -70,9 +70,6 @@ class MyCLI(aiocmd.PromptToolkitCmd):
 
     async def do_next_round(self):
         self.game.next_round.set()
-        
-    # async def do_debug(self):
-    #     self.game.inq.debug = not self.game.inq.d
 
     async def do_load(self, name: str):
         if self.game:
@@ -81,7 +78,6 @@ class MyCLI(aiocmd.PromptToolkitCmd):
         with open(f"saved_games/{name}.pickle", "rb") as f:
             state = pickle.load(f)
         self.game = Game.load(state)
-        # self.players = self.game.players  # have to update the players also!!??
         try:
             self.game_task = asyncio.create_task(self.game.start(from_save=True))
         except asyncio.CancelledError as ex:
