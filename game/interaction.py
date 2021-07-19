@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import asyncio
 from random import choices
 
-from game.player import Player
+from game.player import Player, PlayerList
 
 
 class AnsweredWithoutQuestion(Exception):
@@ -18,7 +18,7 @@ class Question:
 
 
 class SelectTeam(Question):
-    def __init__(self, options: List[Player], n_members: int):
+    def __init__(self, options: PlayerList, n_members: int):
         msg = f"Select players for the next quest...({n_members})"
         ops = {p.name: p for p in options}
         super().__init__(question=msg, options=ops, m=n_members)

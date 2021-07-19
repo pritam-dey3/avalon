@@ -7,19 +7,17 @@ from random import sample, shuffle
 
 from game.characters_and_quests import get_characters, quest_table
 from game.interaction import FindMerlin, Inquisitor, SelectTeam, TeamVote, QuestVote
-from game.player import Account, Player
+from game.player import Player, PlayerList
 
 
 QuestRes = Literal["success", "failure", ""]
 
+
 class Game:
-    def __init__(self, players: List[Player], inq: Type[Inquisitor]):
+    def __init__(self, players: PlayerList, inq: Type[Inquisitor]):
         self.players = players
-        self.leader = 0
         self.vote_track = 0
-        self.quest_results: List[QuestRes] = [
-            "" for _ in range(5)
-        ]
+        self.quest_results: List[QuestRes] = ["" for _ in range(5)]
         self.result = ""
         self.n_players = len(self.players)
         self.quest_no = 0
@@ -30,17 +28,12 @@ class Game:
 
     async def start(self, from_save=False):
         if not from_save:
-            self.assign_characters()
+            self.players.set_characters()
             self.reveal_characters()
         self.next_round = asyncio.Event()
+        self.players.update_leader()
         await self.loop()
         await self.end()
-
-    def assign_characters(self, silent=False):
-        characters = get_characters(self.n_players)
-        players = sample(self.players, k=len(self.players))
-        for player, character in zip(players, characters):
-            player.set_character(character, silent)
 
     def reveal_characters(self):
         for player in self.players:
@@ -49,11 +42,11 @@ class Game:
     async def loop(self):
         while True:
             answers = await self.leader_selects().result()
-            quest_members = answers[self.players[self.leader]]
+            quest_members = answers[self.players.leader]
             # print(quest_members)
             await self.quest(quest_members)
             await self.wait_for_next_round()
-            self.leader = (self.leader + 1) % self.n_players
+            self.players.update_leader()
             if self.game_is_finished():
                 break
 
@@ -78,7 +71,7 @@ class Game:
     async def quest(self, members: List[Player]):
         quest_player_names = [player.name for player in members]
         self.send_msg(
-            text=f"{self.players[self.leader].acc.name} has chosen the following players.\n"
+            text=f"{self.players.leader.acc.name} has chosen the following players.\n"
             + ", ".join(quest_player_names)
         )
 
@@ -99,7 +92,7 @@ class Game:
         else:
             self.quest_results[self.quest_no] = "success"
             self.send_msg(text="Successful quest!")
-            return 
+            return
 
     def leader_selects(self) -> Inquisitor:
         """Ask the leader to select team for next quest
@@ -109,7 +102,7 @@ class Game:
             return leader's selections.
         """
         n_members = quest_table[self.quest_no][self.n_players - 5][0]
-        leader = self.players[self.leader]
+        leader = self.players.leader
         q = SelectTeam(options=self.players, n_members=n_members)
         return self.inq({leader: q})
 
@@ -156,8 +149,8 @@ class Game:
 
     @classmethod
     def load(self, state: Dict):
-        g = self(players=[], inq=None)
+        g = self(players=PlayerList(), inq=None)
         g.__dict__.update(state)
-        g.assign_characters(silent=True)
+        g.players.set_characters(silent=True)
         # g.next_round = asyncio.Event()
         return g

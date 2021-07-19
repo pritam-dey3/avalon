@@ -1,8 +1,11 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING, Protocol, Any
+from typing import Dict, List, TYPE_CHECKING, Protocol, Any, Type
 import asyncio
+from collections.abc import MutableMapping
+from itertools import cycle
+from random import sample
 
-from game.characters_and_quests import Character
+from game.characters_and_quests import Character, get_characters
 
 if TYPE_CHECKING:
     from game.interaction import Inquisitor
@@ -21,11 +24,6 @@ class Player:
         self.id = acc.id
         self.current_inq: Inquisitor = None
 
-    @staticmethod
-    def get_id_name(players: List[Player]):
-        player_list = [(player.id, player.name) for player in players]
-        return player_list
-
     def reveal_characters(self, players: List[Player]):
         revealed_characters = ""
         for player in players:
@@ -34,22 +32,6 @@ class Player:
         self.send_msg(
             text=self.character.character_reveal_sentence + revealed_characters[:-2]
         )
-
-    def vote_for_team(self):
-        text = "Do you approve the current team for this quest?"
-        options = ["a", "r"]
-        guide = "a:\taccept team\nr:\treject team"
-        vote = self.send_msg(text=text, options=options, guide=guide)
-        return vote == "a"
-
-    def vote_for_quest(self):
-        text = "Do you want this mission to be a success or failure?"
-        options = ["s"] + (["f"] if self.character.type == "evil" else [])
-        guide = "s:\tSuccess\nf:\tFail" + (
-            "(x)" if self.character.type == "good" else ""
-        )
-        vote = self.send_msg(text=text, options=options, guide=guide)
-        return vote == "s"
 
     def set_player(self, acc: Account):
         self.acc = acc
@@ -65,7 +47,7 @@ class Player:
         Args:
             text (str, optional): Text message to send. Defaults to "".
         """
-        raise NotImplementedError        
+        raise NotImplementedError
 
     def get_msg(self, args: List[str]):
         """Called when the player answers to some question.
@@ -90,3 +72,60 @@ class Player:
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+
+class PlayerList():
+    def __init__(
+        self,
+    ):
+        self.leader: Player = None
+        self._store: Dict[Account, Player] = {}
+        self._n_players = 0
+        self.leader_cycle = cycle(self.store.values())
+        
+    @property
+    def store(self):
+        return self._store
+    
+    @store.setter
+    def store(self, val):
+        self._store = val
+        self.leader_cycle = cycle(self._store.values())
+
+    @property
+    def n_players(self):
+        if self.store:
+            return len(self.store)
+        else:
+            return 0
+
+    @n_players.setter
+    def n_players(self, value: int):
+        self._n_players = value
+
+    def set_characters(self, silent=False):
+        characters = get_characters(self.n_players)
+        players: List[Player] = sample(list(self.store.values()), k=self.n_players)
+        for player, character in zip(players, characters):
+            player.set_character(character, silent)
+            self.__dict__[character.name] = player
+            # print(character.name, player)    # debug
+
+    def update_leader(self):
+        self.leader = next(self.leader_cycle)
+
+    def __getitem__(self, key: Account):
+        return self.store[key]
+
+    def __setitem__(self, key: Account, value: Player):
+        self.store[key] = value
+        self.n_players += 1
+
+    def __delitem__(self, key):
+        del self.store[key]
+
+    def __iter__(self):
+        return iter(self.store.values())
+
+    def __len__(self):
+        return len(self.store)

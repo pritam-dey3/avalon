@@ -6,6 +6,7 @@ import asyncio
 from aiocmd import aiocmd
 from aiocmd.aiocmd import ExitPromptException
 
+from game.player import PlayerList
 from game.avalon import Game
 
 from shell_gameplay.shell_game import ShellInquisitor, ShellPlayer
@@ -60,8 +61,10 @@ class MyCLI(aiocmd.PromptToolkitCmd):
 
     async def do_start_game(self):
         names = ["Alice", "Cairo", "LongHorn", "Duke", "Green"]
-        players = [User(_id=i, name=name) for i, name in enumerate(names)]
-        players = [ShellPlayer(acc=acc) for acc in players]
+        players = PlayerList(
+            [User(_id=i, name=name) for i, name in enumerate(names)],
+            player_type=ShellPlayer,
+        )
         self.game = Game(players=players, inq=ShellInquisitor)
         self.game_task = asyncio.create_task(self.game.start())
 
@@ -81,8 +84,6 @@ class MyCLI(aiocmd.PromptToolkitCmd):
         try:
             self.game_task = asyncio.create_task(self.game.start(from_save=True))
         except asyncio.CancelledError as ex:
-            print("cancel")
-            print(ex)
             raise
         except:
             traceback.print_exc()
@@ -98,8 +99,7 @@ class MyCLI(aiocmd.PromptToolkitCmd):
     def do_clear(self):
         os.system("clear")
 
-
-async def background_task():
-    print("doing background job")
-    await asyncio.sleep(5)
-    print("job done")
+    async def background_task(self):
+        print("doing background job")
+        await asyncio.sleep(5)
+        print("job done")
