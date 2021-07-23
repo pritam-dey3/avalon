@@ -2,6 +2,7 @@ from typing import List
 from random import sample
 from dataclasses import dataclass
 
+
 # use dataclass
 @dataclass
 class Character:

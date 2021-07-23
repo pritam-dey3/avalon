@@ -1,9 +1,8 @@
-from typing import List, Dict, Mapping, Sequence
+from typing import List, Dict, Mapping
 from dataclasses import dataclass
 import asyncio
-from random import choices
 
-from game.player import Player, PlayerList
+from avalon.player import Player, PlayerList
 
 
 class AnsweredWithoutQuestion(Exception):
@@ -41,10 +40,11 @@ class QuestVote(Question):
 
 
 class FindMerlin(Question):
-    def __init__(self, players:List[Player]):
+    def __init__(self, players: List[Player]):
         msg = "Find Merlin to win the game."
         ops = {p.name: p.character.name for p in players}
         super().__init__(question=msg, options=ops, m=1)
+
 
 class Inquisitor:
     def __init__(
@@ -67,7 +67,6 @@ class Inquisitor:
             ]
         )
         self.event.clear()
-        
 
     async def send_msg(self, player: Player, q: Question):
         raise NotImplementedError
