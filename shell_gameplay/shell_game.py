@@ -22,6 +22,7 @@ class ShellPlayer(Player):
         print(text)
 
     def get_msg(self, args):
+        """Process player input for given question"""
         if not isinstance(args, list):
             args = [args]
         if self.current_inq is None:

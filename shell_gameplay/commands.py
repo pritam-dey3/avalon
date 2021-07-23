@@ -61,10 +61,8 @@ class MyCLI(aiocmd.PromptToolkitCmd):
 
     async def do_start_game(self):
         names = ["Alice", "Cairo", "LongHorn", "Duke", "Green"]
-        players = PlayerList(
-            [User(_id=i, name=name) for i, name in enumerate(names)],
-            player_type=ShellPlayer,
-        )
+        users = [User(_id=i, name=name) for i, name in enumerate(names)]
+        players = PlayerList(store={ShellPlayer(acc=user): user for user in users})
         self.game = Game(players=players, inq=ShellInquisitor)
         self.game_task = asyncio.create_task(self.game.start())
 
@@ -72,7 +70,7 @@ class MyCLI(aiocmd.PromptToolkitCmd):
         self.game.players[int(player_id)].get_msg(args[0])
 
     async def do_next_round(self):
-        self.game.next_round.set()
+        self.game.event_next_round.set()
 
     async def do_load(self, name: str):
         if self.game:

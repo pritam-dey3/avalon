@@ -21,7 +21,7 @@ class Game:
         self.result = ""
         self.n_players = len(self.players)
         self.quest_no = 0
-        self.next_round = None
+        self.event_next_round = None
         self.abort_game = False
         self.inq = inq
         self.debug = False
@@ -30,7 +30,7 @@ class Game:
         if not from_save:
             self.players.set_characters()
             self.reveal_characters()
-        self.next_round = asyncio.Event()
+        self.event_next_round = asyncio.Event()
         self.players.update_leader()
         await self.loop()
         await self.end()
@@ -41,18 +41,19 @@ class Game:
 
     async def loop(self):
         while True:
+            self.send_msg("Write `next_round` when you are ready")
+            await self.wait_for_next_round()
             answers = await self.leader_selects().result()
             quest_members = answers[self.players.leader]
             # print(quest_members)
             await self.quest(quest_members)
-            await self.wait_for_next_round()
             self.players.update_leader()
             if self.game_is_finished():
                 break
 
     async def wait_for_next_round(self):
-        await self.next_round.wait()
-        self.next_round.clear()
+        await self.event_next_round.wait()
+        self.event_next_round.clear()
 
     async def end(self):
         if self.result == "evil":
@@ -81,18 +82,19 @@ class Game:
             self.vote_track += 1
             return
 
-        self.quest_no += 1
         # Quest vote
         fail_count = await self.quest_vote(members)
 
         if fail_count >= quest_table[self.quest_no][self.n_players - 5][1]:
             self.quest_results[self.quest_no] = "failure"
             self.send_msg(text="Quest failed.")
-            return
         else:
             self.quest_results[self.quest_no] = "success"
             self.send_msg(text="Successful quest!")
-            return
+
+        # increment quest count
+        self.quest_no += 1
+        return
 
     def leader_selects(self) -> Inquisitor:
         """Ask the leader to select team for next quest
