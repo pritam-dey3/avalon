@@ -1,14 +1,12 @@
 from __future__ import annotations
-from typing import Dict, List, TYPE_CHECKING, Protocol, Any, Type
-import asyncio
-from collections.abc import MutableMapping
+from typing import Dict, List, TYPE_CHECKING, Protocol, Any
 from itertools import cycle
 from random import sample
 
-from game.characters_and_quests import Character, get_characters
+from avalon.characters_and_quests import Character, get_characters
 
 if TYPE_CHECKING:
-    from game.interaction import Inquisitor
+    from avalon.interaction import Inquisitor
 
 
 class Account(Protocol):
@@ -55,7 +53,8 @@ class Player:
         This function should ensure 1. The values in `args` are one of
         the options provided by the `Inquisitor`. 2. `self.current_inq is not None`
 
-        Finally this function calls current inquisitor with `self.current_inq(self, args)`
+        Finally this function calls current inquisitor with
+        `self.current_inq(self, args)`
 
         Args:
             args (List[str]): List of arguments passed while answering
@@ -74,7 +73,7 @@ class Player:
         return hash(self.id)
 
 
-class PlayerList():
+class PlayerList:
     def __init__(
         self,
     ):
@@ -82,11 +81,11 @@ class PlayerList():
         self._store: Dict[Account, Player] = {}
         self._n_players = 0
         self.leader_cycle = cycle(self.store.values())
-        
+
     @property
     def store(self):
         return self._store
-    
+
     @store.setter
     def store(self, val):
         self._store = val

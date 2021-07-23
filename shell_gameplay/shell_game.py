@@ -1,7 +1,8 @@
 import asyncio
 
-from game.avalon import Player
-from game.interaction import Inquisitor, Question
+from avalon.avalon import Player
+from avalon.interaction import Inquisitor, Question
+
 
 class ShellInquisitor(Inquisitor):
     async def send_msg(self, player: Player, q: Question):
@@ -16,7 +17,6 @@ class ShellInquisitor(Inquisitor):
 
 
 class ShellPlayer(Player):
-    
     def send_msg(self, text: str = ""):
         print(f"Private message to {self.acc.name}...")
         print(text)
@@ -27,7 +27,7 @@ class ShellPlayer(Player):
         if self.current_inq is None:
             self.send_msg("You don't have any questions")
             return 0
-        
+
         q = self.current_inq.questions[self]
         options = q.options
         if all(arg in options.keys() for arg in args) and len(args) == q.m:

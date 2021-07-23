@@ -2,12 +2,12 @@ from __future__ import annotations
 import asyncio
 from typing import Dict, List, Type, Literal
 
-from random import sample, shuffle
+from random import shuffle
 
 
-from game.characters_and_quests import get_characters, quest_table
-from game.interaction import FindMerlin, Inquisitor, SelectTeam, TeamVote, QuestVote
-from game.player import Player, PlayerList
+from avalon.characters_and_quests import quest_table
+from avalon.interaction import FindMerlin, Inquisitor, SelectTeam, TeamVote, QuestVote
+from avalon.player import Player, PlayerList
 
 
 QuestRes = Literal["success", "failure", ""]
@@ -139,7 +139,7 @@ class Game:
             return False
 
     def send_msg(self, text: str = ""):
-        print(f"Announcement...")
+        print("Announcement...")
         print(text)
 
     def save(self):

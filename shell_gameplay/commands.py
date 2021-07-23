@@ -6,8 +6,8 @@ import asyncio
 from aiocmd import aiocmd
 from aiocmd.aiocmd import ExitPromptException
 
-from game.player import PlayerList
-from game.avalon import Game
+from avalon.player import PlayerList
+from avalon.avalon import Game
 
 from shell_gameplay.shell_game import ShellInquisitor, ShellPlayer
 
@@ -84,8 +84,9 @@ class MyCLI(aiocmd.PromptToolkitCmd):
         try:
             self.game_task = asyncio.create_task(self.game.start(from_save=True))
         except asyncio.CancelledError as ex:
+            print(ex)
             raise
-        except:
+        except Exception:
             traceback.print_exc()
             return False
 
