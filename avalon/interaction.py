@@ -72,6 +72,7 @@ class Inquisitor:
         raise NotImplementedError
 
     def get_answer(self, player: Player, answer: List[str]):
+        """Convert valid player answers(str) to objects"""
         assert len(answer) == self.questions[player].m
         try:
             question = self.questions[player]

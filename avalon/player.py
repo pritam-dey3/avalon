@@ -75,10 +75,10 @@ class Player:
 
 class PlayerList:
     def __init__(
-        self,
+        self, store: Dict[Account, Player] = {}
     ):
         self.leader: Player = None
-        self._store: Dict[Account, Player] = {}
+        self._store: Dict[Account, Player] = store
         self._n_players = 0
         self.leader_cycle = cycle(self.store.values())
 
