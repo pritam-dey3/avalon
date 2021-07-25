@@ -1,61 +1,60 @@
-from typing import List
-from random import sample
 from dataclasses import dataclass
+from random import sample
+from typing import List
 
 
-# use dataclass
 @dataclass
 class Character:
     name: str
     type: str
     knows_characters_of: List[str]
-    character_reveal_sentence: str
+    character_reveal_prefix: str
 
 
 merlin = Character(
     name="merlin",
     type="good",
     knows_characters_of=["assassin", "morgana"],
-    character_reveal_sentence="Assassin and Morgana are ",
+    character_reveal_prefix="Assassin and Morgana are ",
 )
 
 percival = Character(
     name="percival",
     type="good",
     knows_characters_of=["merlin", "morgana"],
-    character_reveal_sentence="Merlin is one of ",
+    character_reveal_prefix="Merlin is one of ",
 )
 
 loyal_servant = Character(
     name="loyal_servant",
     type="good",
     knows_characters_of=[],
-    character_reveal_sentence="",
+    character_reveal_prefix="",
 )
 
 assassin = Character(
     name="assassin",
     type="evil",
     knows_characters_of=["morgana", "minion"],
-    character_reveal_sentence="Minions of Mordred are ",
+    character_reveal_prefix="Minions of Mordred are ",
 )
 
 morgana = Character(
     name="morgana",
     type="evil",
     knows_characters_of=["assassin", "minion"],
-    character_reveal_sentence="Minions of Mordred are ",
+    character_reveal_prefix="Minions of Mordred are ",
 )
 
 minion = Character(
     name="minion",
     type="evil",
     knows_characters_of=["assassin", "morgana", "minion"],
-    character_reveal_sentence="Minions of Mordred are ",
+    character_reveal_prefix="Minions of Mordred are ",
 )
 
 oberon = Character(
-    name="oberon", type="evil", knows_characters_of=[], character_reveal_sentence=" "
+    name="oberon", type="evil", knows_characters_of=[], character_reveal_prefix=" "
 )
 
 

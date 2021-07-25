@@ -2,7 +2,7 @@ import asyncio
 
 from avalon.avalon import Game
 from avalon.player import PlayerList
-from shell_gameplay.shell_game import ShellPlayer
+from shell_game.shell_game import ShellPlayer
 
 
 class User:

@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from dataclasses import dataclass
-from typing import Dict, List, Mapping
+from typing import TYPE_CHECKING, Dict, List, Mapping
 
-from avalon.player import Player, PlayerList
+if TYPE_CHECKING:
+    from avalon.player import Player, PlayerList
 
 
 class AnsweredWithoutQuestion(Exception):
