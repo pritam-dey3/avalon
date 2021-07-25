@@ -1,3 +1,4 @@
+import asyncio
 from typing import Union
 
 from avalon.avalon import Player
@@ -35,13 +36,15 @@ class ShellPlayer(Player):
         """Process player input for given question"""
         if not isinstance(args, list):
             args = [args]
-        if self.current_inq is None:
-            self.send_msg("You don't have any questions")
+        if self._current_q is None:
+            asyncio.create_task(self.send_msg("You don't have any questions"))
             return 0
-
-        q = self.current_inq.questions[self]
-        options = q.options
-        if all(arg in options.keys() for arg in args) and len(args) == q.m:
-            self.current_inq.get_answer(self, args)
+        q = self.current_q
+        if all(arg in q.options.keys() for arg in args) and len(args) == q.m:
+            self.current_q.reply(answers=args)
         else:
-            self.send_msg(f"Invalid answer(s). Choose {q.m} answer(s) from the options")
+            asyncio.create_task(
+                self.send_msg(
+                    f"Invalid answer(s). Choose {q.m} answer(s) from the options"
+                )
+            )

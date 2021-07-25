@@ -8,7 +8,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Protocol, Union
 from avalon.characters_and_quests import Character, get_characters
 
 if TYPE_CHECKING:
-    from avalon.interaction import Inquisitor, Question
+    from avalon.interaction import Question
+
+
+class AnsweredWithoutQuestion(Exception):
+    pass
 
 
 class Account(Protocol):
@@ -20,9 +24,21 @@ class Player:
     def __init__(self, acc: Account, character: Character = None):
         self.acc = acc
         self.character = character
-        self.current_inq: Inquisitor = None
+        self._current_q: Question = None
         self.name = getattr(acc, "name", "default name")
         self.id = getattr(acc, "id", 0)
+
+    @property
+    def current_q(self):
+        if self._current_q is None:
+            raise AnsweredWithoutQuestion(
+                f"{self.name} answered, but no question was asked."
+            )
+        return self._current_q
+
+    @current_q.setter
+    def current_q(self, val: Question | None):
+        self._current_q = val
 
     async def reveal_characters(self, players: PlayerList):
         if not self.character.knows_characters_of:
