@@ -1,6 +1,6 @@
-from typing import List, Dict, Mapping
-from dataclasses import dataclass
 import asyncio
+from dataclasses import dataclass
+from typing import Dict, List, Mapping
 
 from avalon.player import Player, PlayerList
 
@@ -61,15 +61,9 @@ class Inquisitor:
             print(player.name)
             player.current_inq = self
         asyncio.gather(
-            *[
-                self.send_msg(player, question)
-                for player, question in self.questions.items()
-            ]
+            *[player.send_msg(question) for player, question in self.questions.items()]
         )
         self.event.clear()
-
-    async def send_msg(self, player: Player, q: Question):
-        raise NotImplementedError
 
     def get_answer(self, player: Player, answer: List[str]):
         """Convert valid player answers(str) to objects"""
