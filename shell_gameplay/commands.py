@@ -1,21 +1,14 @@
-import traceback
+import asyncio
 import os
 import pickle
+import traceback
 
-import asyncio
 from aiocmd import aiocmd
 from aiocmd.aiocmd import ExitPromptException
-
-from avalon.player import PlayerList
 from avalon.avalon import Game
+from avalon.player import PlayerList
 
-from shell_gameplay.shell_game import ShellInquisitor, ShellPlayer
-
-
-class User:
-    def __init__(self, _id: int, name: str):
-        self.id = _id
-        self.name = name
+from shell_gameplay.shell_game import ShellPlayer, User
 
 
 class MyCLI(aiocmd.PromptToolkitCmd):
@@ -61,9 +54,11 @@ class MyCLI(aiocmd.PromptToolkitCmd):
 
     async def do_start_game(self):
         names = ["Alice", "Cairo", "LongHorn", "Duke", "Green"]
-        users = [User(_id=i, name=name) for i, name in enumerate(names)]
-        players = PlayerList(store={ShellPlayer(acc=user): user for user in users})
-        self.game = Game(players=players, inq=ShellInquisitor)
+        players = PlayerList()
+        for i, name in enumerate(names):
+            acc = User(i, name)
+            players[acc] = ShellPlayer(acc=acc)
+        self.game = Game(players=players)
         self.game_task = asyncio.create_task(self.game.start())
 
     async def do_answer(self, player_id: int, *args):

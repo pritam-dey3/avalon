@@ -1,12 +1,14 @@
 from __future__ import annotations
-from typing import Dict, List, TYPE_CHECKING, Protocol, Any
+
+import asyncio
 from itertools import cycle
 from random import sample
+from typing import TYPE_CHECKING, Any, Dict, List, Protocol, Union
 
 from avalon.characters_and_quests import Character, get_characters
 
 if TYPE_CHECKING:
-    from avalon.interaction import Inquisitor
+    from avalon.interaction import Inquisitor, Question
 
 
 class Account(Protocol):
@@ -18,28 +20,25 @@ class Player:
     def __init__(self, acc: Account, character: Character = None):
         self.acc = acc
         self.character = character
-        self.name = acc.name
-        self.id = acc.id
         self.current_inq: Inquisitor = None
+        self.name = getattr(acc, "name", repr(acc))
+        self.id = getattr(acc, "id", 0)
 
-    def reveal_characters(self, players: List[Player]):
+    async def reveal_characters(self, players: List[Player]):
         revealed_characters = ""
         for player in players:
             if player.character.name in self.character.knows_characters_of:
                 revealed_characters += player.name + ", "
-        self.send_msg(
-            text=self.character.character_reveal_sentence + revealed_characters[:-2]
+        await self.send_msg(
+            msg=self.character.character_reveal_sentence + revealed_characters[:-2]
         )
 
-    def set_player(self, acc: Account):
-        self.acc = acc
-
-    def set_character(self, character: Character, silent=False):
+    async def set_character(self, character: Character, silent=False):
         self.character = character
         if not silent:
-            self.send_msg(text=f"You are {self.character.name}!")
+            await self.send_msg(msg=f"You are {self.character.name}!")
 
-    def send_msg(self, text: str = ""):
+    async def send_msg(self, msg: Union[str, Question] = ""):
         """Sends `text` to the player
 
         Args:
@@ -47,7 +46,7 @@ class Player:
         """
         raise NotImplementedError
 
-    def get_msg(self, args: List[str]):
+    async def get_msg(self, args: List[str]):
         """Called when the player answers to some question.
 
         This function should ensure 1. The values in `args` are one of
@@ -62,25 +61,23 @@ class Player:
         raise NotImplementedError
 
     def __repr__(self):
-        return f"{self.acc.id}: {self.acc.name}, {self.character.name}"
+        return f"{self.id}: {self.name}, {self.character.name}"
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Player):
             return False
-        return self.acc.id == other.acc.id
+        return self.id == other.acc.id
 
     def __hash__(self) -> int:
         return hash(self.id)
 
 
 class PlayerList:
-    def __init__(
-        self, store: Dict[Account, Player] = {}
-    ):
+    def __init__(self, store: Dict[Account, Player] = {}):
         self.leader: Player = None
         self._store: Dict[Account, Player] = store
-        self._n_players = 0
-        self.leader_cycle = cycle(self.store.values())
+        self.n_players = 0
+        self._leader_cycle = None
 
     @property
     def store(self):
@@ -89,42 +86,40 @@ class PlayerList:
     @store.setter
     def store(self, val):
         self._store = val
-        self.leader_cycle = cycle(self._store.values())
+        self.n_players = len(self._store)
 
     @property
-    def n_players(self):
-        if self.store:
-            return len(self.store)
-        else:
-            return 0
-
-    @n_players.setter
-    def n_players(self, value: int):
-        self._n_players = value
+    def leader_cycle(self):
+        if self._leader_cycle is None:
+            self._leader_cycle = cycle(self._store.values())
+        return self._leader_cycle
 
     def set_characters(self, silent=False):
         characters = get_characters(self.n_players)
-        players: List[Player] = sample(list(self.store.values()), k=self.n_players)
+        players: List[Player] = sample(list(self._store.values()), k=self.n_players)
+        coros = []
         for player, character in zip(players, characters):
-            player.set_character(character, silent)
+            coros.append(player.set_character(character, silent))
             self.__dict__[character.name] = player
             # print(character.name, player)    # debug
+        asyncio.gather(*coros)
 
     def update_leader(self):
         self.leader = next(self.leader_cycle)
 
     def __getitem__(self, key: Account):
-        return self.store[key]
+        return self._store[key]
 
     def __setitem__(self, key: Account, value: Player):
-        self.store[key] = value
+        self._store[key] = value
         self.n_players += 1
 
     def __delitem__(self, key):
-        del self.store[key]
+        del self._store[key]
+        self.n_players -= 1
 
     def __iter__(self):
-        return iter(self.store.values())
+        return iter(self._store.values())
 
     def __len__(self):
-        return len(self.store)
+        return len(self._store)

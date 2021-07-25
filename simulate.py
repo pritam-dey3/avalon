@@ -1,8 +1,8 @@
-from shell_gameplay.shell_game import ShellPlayer, ShellInquisitor
+import asyncio
+
 from avalon.avalon import Game
 from avalon.player import PlayerList
-
-import asyncio
+from shell_gameplay.shell_game import ShellPlayer
 
 
 class User:
@@ -13,9 +13,13 @@ class User:
 
 # set game
 names = ["Alice", "Cairo", "LongHorn", "Duke", "Green"]
-users = [User(_id=i, name=name) for i, name in enumerate(names)]
-players = PlayerList(store={user: ShellPlayer(acc=user) for user in users})
-game = Game(players=players, inq=ShellInquisitor)
+players = PlayerList()
+users = []
+for i, name in enumerate(names):
+    acc = User(i, name)
+    users.append(acc)
+    players[acc] = ShellPlayer(acc=acc)
+game = Game(players=players)
 
 
 async def last_quest_success():
@@ -37,7 +41,7 @@ async def last_quest_success():
     # quest vote
     await asyncio.sleep(1)
     for i in range(3):
-        players[users[i]].get_msg(["success"])
+        game.players[users[i]].get_msg(["success"])
     # finds merlin
     await asyncio.sleep(1)
     game.players.assassin.get_msg([game.players.merlin.name])

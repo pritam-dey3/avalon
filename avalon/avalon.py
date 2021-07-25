@@ -1,20 +1,18 @@
 from __future__ import annotations
+
 import asyncio
-from typing import Dict, List, Type, Literal
-
 from random import shuffle
-
+from typing import Dict, List, Literal
 
 from avalon.characters_and_quests import quest_table
-from avalon.interaction import FindMerlin, Inquisitor, SelectTeam, TeamVote, QuestVote
+from avalon.interaction import FindMerlin, Inquisitor, QuestVote, SelectTeam, TeamVote
 from avalon.player import Player, PlayerList
-
 
 QuestRes = Literal["success", "failure", ""]
 
 
 class Game:
-    def __init__(self, players: PlayerList, inq: Type[Inquisitor]):
+    def __init__(self, players: PlayerList):
         self.players = players
         self.vote_track = 0
         self.quest_results: List[QuestRes] = ["" for _ in range(5)]
@@ -23,7 +21,6 @@ class Game:
         self.quest_no = 0
         self.event_next_round = None
         self.abort_game = False
-        self.inq = inq
         self.debug = False
 
     async def start(self, from_save=False):
@@ -36,8 +33,9 @@ class Game:
         await self.end()
 
     def reveal_characters(self):
-        for player in self.players:
-            player.reveal_characters(self.players)
+        asyncio.gather(
+            *[player.reveal_characters(self.players) for player in self.players]
+        )
 
     async def loop(self):
         while True:
@@ -60,7 +58,9 @@ class Game:
             self.send_msg(text="Minions of the Mordred wins!")
             return
         assassin = next(filter(lambda p: p.character.name == "assassin", self.players))
-        assassins_choice = await self.inq({assassin: FindMerlin(self.players)}).result()
+        assassins_choice = await Inquisitor(
+            {assassin: FindMerlin(self.players)}
+        ).result()
         merlin_found = assassins_choice[assassin][0] == "merlin"
         if merlin_found:
             self.send_msg(text="Minions of the Mordred wins!")
@@ -106,16 +106,16 @@ class Game:
         n_members = quest_table[self.quest_no][self.n_players - 5][0]
         leader = self.players.leader
         q = SelectTeam(options=self.players, n_members=n_members)
-        return self.inq({leader: q})
+        return Inquisitor({leader: q})
 
     async def team_vote(self) -> int:
-        votes = await self.inq({p: TeamVote() for p in self.players}).result()
+        votes = await Inquisitor({p: TeamVote() for p in self.players}).result()
         votes = [v[0] for v in votes.values()]
         return 2 * sum(votes) - self.n_players
 
     async def quest_vote(self, members: List[Player]) -> int:
         # quest_vote(members).result()
-        votes = await self.inq({p: QuestVote(p) for p in members}).result()
+        votes = await Inquisitor({p: QuestVote(p) for p in members}).result()
         votes = [v[0] for v in votes.values()]
         shuffle(votes)
         votes_msg = ["Success" if vote else "Fail" for vote in votes]
@@ -146,13 +146,13 @@ class Game:
 
     def save(self):
         state = self.__dict__
-        state.pop("next_round")
+        state.pop("event_next_round", None)
         return state
 
     @classmethod
     def load(self, state: Dict):
-        g = self(players=PlayerList(), inq=None)
+        g = self(players=PlayerList())
         g.__dict__.update(state)
         g.players.set_characters(silent=True)
-        # g.next_round = asyncio.Event()
+        # g.event_next_round = asyncio.Event()  <-- This should be set after loading
         return g

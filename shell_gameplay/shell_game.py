@@ -1,24 +1,34 @@
-import asyncio
+from typing import Union
 
 from avalon.avalon import Player
-from avalon.interaction import Inquisitor, Question
+from avalon.characters_and_quests import Character
+from avalon.interaction import Question
 
 
-class ShellInquisitor(Inquisitor):
-    async def send_msg(self, player: Player, q: Question):
-        print(f"Question to {player.name}...")
-        await asyncio.sleep(0.3)
-        # process options
-        print(q.question)
-        options = "\n".join(f"{i}:\t {op}" for i, op in enumerate(q.options))
-        await asyncio.sleep(0.3)
-        print(options, flush=True)
-        return
+class User:
+    def __init__(self, _id: int, name: str):
+        self.id = _id
+        self.name = name
 
 
 class ShellPlayer(Player):
-    def send_msg(self, text: str = ""):
+    def __init__(self, acc: User, character: Character = None):
+        super().__init__(acc, character=character)
+        self.name = acc.name
+        self.id = acc.id
+
+    async def send_msg(self, msg: Union[str, Question] = ""):
         print(f"Private message to {self.acc.name}...")
+        if isinstance(msg, Question):
+            text = (
+                msg.question
+                + "\n"
+                + "\n".join(f"{i}:\t {op}" for i, op in enumerate(msg.options))
+            )
+        elif isinstance(msg, str):
+            text = msg
+        else:
+            raise ValueError("`msg` argument is not `str` or `Question`")
         print(text)
 
     def get_msg(self, args):
