@@ -5,7 +5,7 @@ from random import shuffle
 from typing import Dict, List, Literal
 
 from avalon.characters_and_quests import quest_table
-from avalon.interaction import FindMerlin, Inquisitor, QuestVote, SelectTeam, TeamVote
+from avalon.interaction import FindMerlin, QuestVote, SelectTeam, TeamVote
 from avalon.player import Player, PlayerList
 
 QuestRes = Literal["success", "failure", ""]
@@ -41,8 +41,8 @@ class Game:
         while True:
             self.send_msg("Write `next_round` when you are ready")
             await self.wait_for_next_round()
-            answers = await self.leader_selects().result()
-            quest_members = answers[self.players.leader]
+            quest_members = await self.leader_selects()
+            # quest_members = answers[self.players.leader]
             # print(quest_members)
             await self.quest(quest_members)
             self.players.update_leader()
@@ -57,11 +57,9 @@ class Game:
         if self.result == "evil":
             self.send_msg(text="Minions of the Mordred wins!")
             return
-        assassin = next(filter(lambda p: p.character.name == "assassin", self.players))
-        assassins_choice = await Inquisitor(
-            {assassin: FindMerlin(self.players)}
-        ).result()
-        merlin_found = assassins_choice[assassin][0] == "merlin"
+        merlin_found = await FindMerlin(
+            assassin=self.players.assassin, players=self.players
+        ).answer()
         if merlin_found:
             self.send_msg(text="Minions of the Mordred wins!")
             return
@@ -96,7 +94,7 @@ class Game:
         self.quest_no += 1
         return
 
-    def leader_selects(self) -> Inquisitor:
+    async def leader_selects(self) -> List[Player]:
         """Ask the leader to select team for next quest
 
         Returns:
@@ -104,19 +102,20 @@ class Game:
             return leader's selections.
         """
         n_members = quest_table[self.quest_no][self.n_players - 5][0]
-        leader = self.players.leader
-        q = SelectTeam(options=self.players, n_members=n_members)
-        return Inquisitor({leader: q})
+
+        team: List[Player] = await SelectTeam(
+            leader=self.players.leader, options=self.players, n_members=n_members
+        ).answer()
+        return team
 
     async def team_vote(self) -> int:
-        votes = await Inquisitor({p: TeamVote() for p in self.players}).result()
-        votes = [v[0] for v in votes.values()]
+        poll = asyncio.gather(*[TeamVote(voter=p).answer() for p in self.players])
+        votes = await poll
         return 2 * sum(votes) - self.n_players
 
     async def quest_vote(self, members: List[Player]) -> int:
-        # quest_vote(members).result()
-        votes = await Inquisitor({p: QuestVote(p) for p in members}).result()
-        votes = [v[0] for v in votes.values()]
+        poll = asyncio.gather(*[QuestVote(voter=p).answer() for p in members])
+        votes = await poll
         shuffle(votes)
         votes_msg = ["Success" if vote else "Fail" for vote in votes]
         self.send_msg(text="Votes for this quest\n" + ", ".join(votes_msg))
